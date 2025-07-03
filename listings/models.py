@@ -1,0 +1,23 @@
+from django.db import models
+from django.db import models
+from users.models import CustomUser
+
+class Listing(models.Model):
+    CATEGORY_CHOICES = [
+        ('sale', 'For Sale'),
+        ('rent', 'For Rent'),
+    ]
+
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    price = models.DecimalField(max_digits=12, decimal_places=2)
+    category = models.CharField(choices=CATEGORY_CHOICES, max_length=10)
+    image = models.ImageField(upload_to='listing_images/')
+    is_published = models.BooleanField(default=True)
+    is_available = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    owner = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+
+    def _str_(self):
+        return self.title
+
