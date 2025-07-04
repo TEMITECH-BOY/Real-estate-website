@@ -11,8 +11,8 @@ class RegisterView(APIView):
         try:
             serializer = RegisterSerializer(data=request.data)
             if serializer.is_valid():
-                serializers.save()
-                return Response(serializers.data,{"message": "User registered successfully"}, status=status.HTTP_201_CREATED)
+               serializer.save()
+            return Response(serializers.data,{"message": "User registered successfully"}, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
@@ -55,7 +55,7 @@ class updateProfileView(APIView):
            return Response(serializers.data, status=status.HTTP_200_OK)
        except Exception as e:
               return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    def post(self, request):
+    def put(self, request):
         try:
             profile = request.user.profile
             serializer = UpdateUserSerializer(profile, data=request.data,)

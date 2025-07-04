@@ -1,6 +1,6 @@
 from django.db import models
 from django.db import models
-from users.models import CustomUser
+from users.models import User
 
 class Listing(models.Model):
     CATEGORY_CHOICES = [
@@ -16,7 +16,7 @@ class Listing(models.Model):
     is_published = models.BooleanField(default=True)
     is_available = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    owner = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE)
 
     def _str_(self):
         return self.title

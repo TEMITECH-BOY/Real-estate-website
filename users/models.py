@@ -2,12 +2,13 @@ from django.db import models
 from django.contrib.auth.models import User
 
 
-GENDER_CHOICES=(
-    ('M''Male'),
-    ('F''Female'),
+GENDER_CHOICES = (
+    ('M', 'Male'),
+    ('F', 'Female'),
 )
 
-class profile(models.Model):
+
+class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     fullname = models.CharField(max_length=255)
     phone = models.CharField(max_length=15, null=True, blank=True)

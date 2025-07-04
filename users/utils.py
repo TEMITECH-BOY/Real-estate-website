@@ -8,7 +8,7 @@ def sendMail(email, fullname):
     send_mail(
         subject,
         message,
-        settings.EMAIL_HOST_USER,  
-        [email,fullname],
+        settings.EMAIL_HOST_USER,
+        [email],  # ✅ FIXED: only pass email here
         fail_silently=False,
     )

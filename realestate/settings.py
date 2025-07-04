@@ -40,8 +40,8 @@ INSTALLED_APPS = [
     'inquiries.apps.InquiriesConfig',
     'payments.apps.PaymentsConfig',
 ]
-AUTH_USER_MODEL ='users.CustomUser'
-# EMAIL_BACKEND ='django.core.mail.backends.console.EmailBackend'
+# AUTH_USER_MODEL ='users.User'
+EMAIL_BACKEND ='django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL ='noreply@realestate.com'
 
 
