@@ -1,57 +1,59 @@
-import uuid
+import requests
+from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
-from .models import Payment
-from .serializers import PaymentSerializer
-from listings.models import Listing
+from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import redirect
+from payments.models import Payment
 
-class InitiatePaymentView(APIView):
+class PaystackCheckoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request):
         user = request.user
-        listing_id = request.data.get('listing_id')
-        amount = request.data.get('amount')
+        cart = user.cart
+        total_amount = int(cart.total_price() * 100)  # Paystack uses kobo
 
-        try:
-            listing = Listing.objects.get(id=listing_id)
-        except Listing.DoesNotExist:
-            return Response({'error': 'Listing not found'}, status=404)
+        headers = {
+            "Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}",
+            "Content-Type": "application/json",
+        }
 
-        reference = str(uuid.uuid4())
+        data = {
+            "email": user.email,
+            "amount": total_amount,
+            "callback_url": "http://127.0.0.1:8000/api/payments/verify/",
+        }
 
-        payment = Payment.objects.create(
-            user=user,
-            listing=listing,
-            amount=amount,
-            reference=reference,
-            status='pending'
+        response = requests.post(
+            "https://api.paystack.co/transaction/initialize",
+            json=data,
+            headers=headers,
         )
 
-        # Simulate payment link (for real, you'd integrate Paystack, Flutterwave, Stripe, etc.)
-        return Response({
-            'message': 'Payment initialized',
-            'payment_reference': reference,
-            'amount': amount,
-            'listing': listing.title,
-            'payment_url': f"https://yourpaymentgateway.com/pay/{reference}"
-        })
+        res_data = response.json()
+        if res_data.get("status"):
+            payment = Payment.objects.create(
+                user=user, amount=total_amount, reference=res_data["data"]["reference"]
+            )
+            return Response({"authorization_url": res_data["data"]["authorization_url"]})
+        else:
+            return Response({"error": res_data.get("message", "Payment failed")}, status=400)
 
-class ConfirmPaymentView(APIView):
-    def post(self, request):
-        reference = request.data.get('reference')
 
-        try:
-            payment = Payment.objects.get(reference=reference)
-        except Payment.DoesNotExist:
-            return Response({'error': 'Invalid payment reference'}, status=404)
+class PaystackVerifyView(APIView):
+    def get(self, request):
+        ref = request.GET.get('reference')
+        headers = {"Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}"}
+        verify_response = requests.get(f"https://api.paystack.co/transaction/verify/{ref}", headers=headers)
+        result = verify_response.json()
 
-        # Simulate successful confirmation
-        payment.status = 'completed'
-        payment.save()
-
-        # Publish the listing
-        listing = payment.listing
-        listing.is_published = True
-        listing.save()
-
-        return Response({'message': 'Payment confirmed and listing published'})
+        if result.get("status") and result["data"]["status"] == "success":
+            # Payment succeeded: you might mark the order as paid
+            payment = Payment.objects.filter(reference=ref).first()
+            if payment:
+                payment.status = 'success'
+                payment.save()
+            return redirect("http://localhost:3000/success")  # your frontend success page
+        else:
+            return redirect("http://localhost:3000/cancel")

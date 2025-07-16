@@ -47,21 +47,21 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         # Extract user fields
-        username = validated_data.pop('username')
-        email = validated_data.pop('email')
-        password = validated_data.pop('password')
-        validated_data.pop('confirm_password')  # Remove confirm_password
+       username = validated_data.pop('username')
+       email = validated_data.pop('email')
+       password = validated_data.pop('password')
+       validated_data.pop('confirm_password')  # Remove confirm_password
 
-        # Create user
-        user = User.objects.create_user(username=username, email=email, password=password)
+       # Create user
+       user = User.objects.create_user(username=username, email=email, password=password)
 
-        # Create profile
-        profile = Profile.objects.create(user=user, **validated_data)
+       # Create profile
+       profile = Profile.objects.create(user=user, **validated_data)
 
-        # Send mail (optional)
-        sendMail(user)
+       # Send mail with email and fullname
+       sendMail(email, validated_data.get('fullname'))
 
-        return profile
+       return profile
 
 
 # Update User/Profile Serializer

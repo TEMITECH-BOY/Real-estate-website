@@ -6,3 +6,5 @@ class PaymentSerializer(serializers.ModelSerializer):
         model = Payment
         fields = '_all_'
         read_only_fields = ['user','created_at']
+
+

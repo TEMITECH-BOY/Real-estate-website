@@ -13,7 +13,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 
 
-SECRET_KEY = str(os.getenv('DJANGO_SECRET_KEY'))     
+SECRET_KEY = str(os.getenv('DJANGO_SECRET_KEY'))   
+
+PAYSTACK_SECRET_KEY = str(os.getenv('PAYSTACK_SECRET_KEY'))
+PAYSTACK_PUBLIC_KEY =str(os.getenv('PAYSTACK_PUBLIC_KEY')) 
 
 
 
@@ -39,6 +42,8 @@ INSTALLED_APPS = [
     'listings.apps.ListingsConfig',
     'inquiries.apps.InquiriesConfig',
     'payments.apps.PaymentsConfig',
+    'cart.apps.CartConfig',
+     'django_filters',
 ]
 # AUTH_USER_MODEL ='users.User'
 EMAIL_BACKEND ='django.core.mail.backends.console.EmailBackend'
@@ -149,14 +154,25 @@ EMAIL_HOST_PASSWORD = str(os.getenv('EMAIL_HOST_PASSWORD'))
 #simple jwt
 from datetime import timedelta
 
+
 REST_FRAMEWORK = {
-
     'DEFAULT_AUTHENTICATION_CLASSES': (
-    
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
-
+    ),
+   'DEFAULT_PERMISSION_CLASSES': (
+    'rest_framework.permissions.AllowAny',
+),
+'DEFAULT_FILTER_BACKENDS': (
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+    ),
+    
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    ],
 }
+
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(days=5),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=5),
