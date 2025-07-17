@@ -12,7 +12,7 @@ urlpatterns = [
     path('api/',include('listings.urls')),
     path('api/',include('inquiries.urls')),
    path('api/payments/', include('payments.urls')),
-   path('api/cart/', include('cart.urls')),
+   path('api/', include('cart.urls')),
 
     # token authentication
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),

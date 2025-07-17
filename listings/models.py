@@ -18,6 +18,7 @@ class Listing(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
 
-    def _str_(self):
+    def __str__(self):
         return self.title
+
 
