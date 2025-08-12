@@ -1,7 +1,9 @@
+import dj_database_url
 import os
 from pathlib import Path
 from dotenv import load_dotenv
 from datetime import timedelta
+
 
 load_dotenv()
 
@@ -46,6 +48,7 @@ DEFAULT_FROM_EMAIL = 'noreply@realestate.com'
 # Middleware
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+     'whitenoise.middleware.WhiteNoiseMiddleware', 
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -89,6 +92,13 @@ DATABASES = {
         'HOST': 'localhost',
         'PORT': '5432',
     }
+} 
+
+DATABASES = {
+    'default': dj_database_url.config(
+        default='postgresql://postgres:postgres@localhost:5432/mysite',
+        conn_max_age=600
+    )
 }
 
 # Password validation
@@ -109,6 +119,15 @@ USE_TZ = True
 STATIC_URL = 'static/'
 MEDIA_URL = '/image/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'image')
+
+
+
+STATIC_URL = '/static/'
+
+if not DEBUG:
+    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # REST Framework
 REST_FRAMEWORK = {
