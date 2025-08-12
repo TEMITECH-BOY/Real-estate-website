@@ -1,17 +1,56 @@
 from rest_framework import serializers
-from .models import Profile
 from django.contrib.auth.models import User
+from .models import Profile
 from .utils import sendMail
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
+# ------------------------------
+# ✅ Register Serializer
+# ------------------------------
+class RegisterSerializer(serializers.Serializer):
+    username = serializers.CharField(required=True)
+    email = serializers.EmailField(required=True)
+    password = serializers.CharField(write_only=True, required=True)
+    confirm_password = serializers.CharField(write_only=True, required=True)
+    fullname = serializers.CharField(required=False, allow_blank=True)
+    gender = serializers.ChoiceField(choices=[('M', 'Male'), ('F', 'Female')], required=False, allow_blank=True)
+    phone = serializers.CharField(required=False, allow_blank=True)
+    image = serializers.ImageField(required=False)
 
-# User Serializer
+    def validate(self, data):
+        if data['password'] != data['confirm_password']:
+            raise serializers.ValidationError({"password": "Passwords do not match"})
+
+        if User.objects.filter(username=data['username']).exists():
+            raise serializers.ValidationError({"username": "Username already taken"})
+
+        if User.objects.filter(email=data['email']).exists():
+            raise serializers.ValidationError({"email": "Email already registered"})
+
+        return data
+
+    def create(self, validated_data):
+        validated_data.pop('confirm_password')
+        username = validated_data.pop('username')
+        email = validated_data.pop('email')
+        password = validated_data.pop('password')
+
+        user = User.objects.create_user(username=username, email=email, password=password)
+
+        # Create profile with remaining fields
+        Profile.objects.create(user=user, **validated_data)
+
+        sendMail(email, validated_data.get('fullname', ''))
+        return user
+
+# ------------------------------
+# ✅ Profile Serializer
+# ------------------------------
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['username', 'email']
 
-
-# Profile Serializer
 class ProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
 
@@ -19,52 +58,9 @@ class ProfileSerializer(serializers.ModelSerializer):
         model = Profile
         fields = ['user', 'fullname', 'gender', 'phone', 'image']
 
-
-# Register Serializer
-class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, required=True)
-    confirm_password = serializers.CharField(write_only=True, required=True)
-    username = serializers.CharField(required=True)
-    email = serializers.EmailField(required=True)
-
-    class Meta:
-        model = Profile
-        fields = ['fullname', 'username', 'email', 'password', 'confirm_password', 'gender', 'phone', 'image']
-
-    def validate(self, data):
-        if data['password'] != data['confirm_password']:
-            raise serializers.ValidationError("Passwords do not match")
-        
-         # Check if username already exists
-        if User.objects.filter(username=data['username']).exists():
-            raise serializers.ValidationError("Username already taken")
-
-        # Check if email already exists
-        if User.objects.filter(email=data['email']).exists():
-            raise serializers.ValidationError("Email already registered")
-
-        return data
-
-    def create(self, validated_data):
-        # Extract user fields
-       username = validated_data.pop('username')
-       email = validated_data.pop('email')
-       password = validated_data.pop('password')
-       validated_data.pop('confirm_password')  # Remove confirm_password
-
-       # Create user
-       user = User.objects.create_user(username=username, email=email, password=password)
-
-       # Create profile
-       profile = Profile.objects.create(user=user, **validated_data)
-
-       # Send mail with email and fullname
-       sendMail(email, validated_data.get('fullname'))
-
-       return profile
-
-
-# Update User/Profile Serializer
+# ------------------------------
+# ✅ Update User/Profile Serializer
+# ------------------------------
 class UpdateUserSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', required=False)
     email = serializers.EmailField(source='user.email', required=False)
@@ -86,5 +82,14 @@ class UpdateUserSerializer(serializers.ModelSerializer):
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
-
         return instance
+
+# ------------------------------
+# ✅ Custom Token Serializer
+# ------------------------------
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        data['username'] = self.user.username
+        data['email'] = self.user.email
+        return data
